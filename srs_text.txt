@@ -1,0 +1,1384 @@
+SOFTWARE REQUIREMENTS SPECIFICATION
+AI-Powered Emergency Green Corridor System
+HackOverflow 4.0 — Orion Coders
+KJ Somaiya Institute of Technology / Pillai HOC College of Engineering and Technology
+Team Members: Lavya Goel | Sarthak Nawali | Sarthak Mohite | Omkar Pawar
+Version: 1.0  |  Date: February 2026
+Revision History
+Version
+Date
+Author
+Description
+1.0
+Feb 2026
+OrionCoders
+Initial SRS draft for HackOverflow 4.0 submission
+Table of Contents
+TOC \h \o "1-3"
+1. Introduction
+1.1 Purpose
+This Software Requirements Specification (SRS) defines the complete functional, non-functional, and technical requirements for the AI-Powered Emergency Green Corridor System developed by Team OrionCoders for HackOverflow 4.0. This document serves as the foundational blueprint for design, development, testing, and demonstration of the system within the hackathon timeline.
+1.2 Scope
+The system, titled "AI Green Corridor", is an intelligent emergency traffic management platform that:
+Detects ambulances in real-time using AI computer vision on CCTV/camera feeds.
+Automatically switches traffic signals to green on the ambulance's route.
+Pushes geofenced alerts to nearby drivers via a Progressive Web App (PWA) installable on any modern smartphone browser.
+Provides city-level oversight through a real-time web dashboard.
+Predicts and pre-clears intersections ahead of the ambulance using route-planning algorithms.
+The system operates without expensive hardware upgrades, leveraging existing smartphones and CCTV infrastructure.
+1.3 Definitions, Acronyms & Abbreviations
+Term
+Definition
+AI
+Artificial Intelligence
+YOLO
+You Only Look Once — Real-time object detection framework
+YOLOv8/v10
+Latest versions of the YOLO detection model by Ultralytics
+ByteTrack
+Multi-object tracking algorithm used to follow detected vehicles
+PWA
+Progressive Web App — installable web app with offline and push capabilities
+Service Worker
+Browser background script enabling offline caching and Web Push notifications
+Web Push API
+W3C standard for push notifications delivered via browser service workers
+V2X
+Vehicle-to-Everything — communication between vehicles and infrastructure
+EMT
+Emergency Medical Technician
+API
+Application Programming Interface
+CCTV
+Closed-Circuit Television
+ETA
+Estimated Time of Arrival
+SRS
+Software Requirements Specification
+TTS
+Text-to-Speech
+WebSocket
+Full-duplex real-time communication protocol over TCP
+Redis
+In-memory data store used for Pub/Sub messaging
+Docker
+Container platform for application deployment
+ONNX
+Open Neural Network Exchange — optimized model inference format
+CNN
+Convolutional Neural Network
+A*
+Heuristic pathfinding algorithm for route optimization
+1.4 Overview
+This document is organized into 7 major sections covering introduction, overall system description, functional requirements (phase-wise), non-functional requirements, system architecture, data requirements, and appendices with task breakdown and technology stack details.
+2. Overall System Description
+2.1 Product Perspective
+The AI Green Corridor is a standalone smart city subsystem designed to integrate with existing urban traffic infrastructure. It interfaces with CCTV cameras, traffic signal controllers, and driver smartphones via a Progressive Web App. The system is hardware-light by design — it does not require specialized ambulance hardware, dedicated roadside units, or native app installations. It operates entirely through software running on commodity servers and any modern web browser.
+2.2 Product Functions Summary
+Module
+Core Function
+AI Detection Engine
+Real-time ambulance detection via YOLOv8/v10 + ByteTrack on camera feeds
+Audio Fusion Module
+Siren detection using CNN on audio spectrograms for dual-modal accuracy
+Route Prediction Engine
+A* pathfinding to predict ambulance route and pre-clear intersections
+Signal Control Module
+Automated green corridor activation with cooldown and re-lock timers
+Real-Time Backend
+Node.js + Socket.io + Redis for zero-latency event distribution
+Driver Alert PWA
+Next.js PWA with service worker, geofenced Web Push alerts, live map, and TTS notifications
+Traffic Dashboard
+React.js + Mapbox GL dashboard for real-time signal and incident monitoring
+Analytics & Logging
+MongoDB-based incident logging with impact metrics and heatmaps
+2.3 User Classes and Characteristics
+User Class
+Description
+Interaction Mode
+Ambulance Driver / EMT
+Primary beneficiary; uses the ambulance-side GPS beacon PWA
+PWA (Beacon Mode)
+Civilian Driver
+Receives "Move Left" alerts and route guidance
+PWA (Driver Mode)
+Traffic Control Operator
+Monitors all active corridors and incident logs via dashboard
+Web Dashboard
+City Administrator
+Reviews analytics, heatmaps, and impact reports
+Web Dashboard (Admin View)
+System / Backend
+Automated AI signal control — no human interaction required
+Internal API calls
+2.4 Operating Environment
+Backend: Ubuntu 22.04 LTS server (or Docker containers on any Linux host)
+Driver Alert PWA: Built with Next.js 14 (App Router) + next-pwa; any modern mobile browser — Chrome 90+, Firefox 90+, Safari 16.4+ (iOS), Edge 90+; installable via "Add to Home Screen"
+Camera Feeds: RTSP streams from IP cameras or simulated video files (demo mode)
+Browser: Chrome 100+, Firefox 98+, Edge 100+ for both the dashboard and PWA
+Network: Minimum 10 Mbps uplink for video analysis; 4G LTE or Wi-Fi for PWA clients
+2.5 Design and Implementation Constraints
+Hackathon Duration: All deliverables must be functional within a 24–36 hour window.
+No New Hardware: System must operate on existing smartphones and CCTV infrastructure.
+No Backend Cloud Costs: Demo must run locally or on a free-tier cloud instance.
+Max 8 Presentation Slides: As mandated by HackOverflow 4.0 rules.
+Real-Time Constraint: Signal switching must occur within 3 seconds of detection.
+2.6 Assumptions and Dependencies
+Camera feeds are accessible as RTSP streams or pre-recorded MP4 files for demo.
+HTTPS is configured for the PWA host (required for service workers and Web Push API).
+VAPID key pair generated for Web Push API authentication (bunx web-push generate-vapid-keys).
+Google Maps JS API key and Mapbox access token are available.
+At least one modern mobile browser (Chrome Android or Safari iOS 16.4+) available for live PWA demo.
+YOLOv8 pre-trained model weights (yolov8n.pt or fine-tuned) are downloaded.
+3. Functional Requirements — Phase-Wise Task Breakdown
+Phase 1: AI Detection Engine  [Hours 0–4]
+Objective: Build a working ambulance detection pipeline that can process a video feed and output bounding-box detections with direction tracking in real time.
+3.1.1 Ambulance Detection Module
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-1.1
+Set up Python virtual environment and install dependencies (ultralytics, opencv, torch, onnxruntime)
+Python 3.10, pip
+Critical
+Sarthak N
+T-1.2
+Download YOLOv8n/YOLOv10 pre-trained weights from Ultralytics
+YOLOv8 / YOLOv10
+Critical
+Sarthak N
+T-1.3
+Source labeled ambulance dataset from Roboflow (Emergency Vehicle Detection dataset — ~3000 images)
+Roboflow API
+Critical
+Lavya G
+T-1.4
+Fine-tune YOLOv8 on ambulance dataset for 30 epochs using Google Colab GPU
+YOLOv8, Google Colab
+High
+Lavya G
+T-1.5
+Export trained model to ONNX format for fast CPU inference during demo
+ONNX Runtime
+High
+Sarthak N
+T-1.6
+Write detect.py — load ONNX model, read video feed frame-by-frame, draw bounding boxes, print class confidence
+OpenCV, ONNX Runtime
+Critical
+Sarthak N
+T-1.7
+Test detect.py on 3 sample ambulance video clips; validate detection accuracy > 85%
+OpenCV
+Critical
+Omkar P
+T-1.8
+Implement frame-skip optimization (process every 3rd frame) to maintain 15+ FPS on CPU
+OpenCV
+Medium
+Sarthak N
+3.1.2 Multi-Object Tracking Module
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-1.9
+Integrate ByteTrack algorithm to assign persistent track IDs to detected ambulances across frames
+ByteTrack
+High
+Sarthak M
+T-1.10
+Compute ambulance velocity vector from track ID centroid history (last 10 frames) to estimate direction of travel
+NumPy
+High
+Sarthak M
+T-1.11
+Implement zone-crossing logic: define entry/exit polygons for each intersection camera view to detect when ambulance crosses into a monitored zone
+OpenCV, NumPy
+High
+Sarthak M
+T-1.12
+Output detection events as JSON: { track_id, confidence, bbox, direction, zone, timestamp } and publish to backend via HTTP POST
+Python requests
+Critical
+Omkar P
+3.1.3 Audio Fusion Module (Advanced)
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-1.13
+Collect 100+ siren audio samples (ambulance, police, fire) and 100 non-siren background samples
+librosa, online sources
+Medium
+Lavya G
+T-1.14
+Convert audio clips to 128-band mel spectrogram images using librosa
+librosa, matplotlib
+Medium
+Lavya G
+T-1.15
+Train lightweight CNN classifier (3 conv layers) on spectrogram images: siren vs. no-siren binary classification
+PyTorch, torchvision
+Medium
+Lavya G
+T-1.16
+Integrate audio classifier with video detector: ambulance confirmed only if BOTH vision + audio agree (AND-gate fusion)
+Python threading
+Medium
+Sarthak M
+Phase 2: Real-Time Backend & Signal Control  [Hours 4–8]
+Objective: Build a production-grade event-driven backend that receives detection events, computes optimal signal switching sequences, and broadcasts real-time updates to all connected clients.
+3.2.1 Backend Server Setup
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-2.1
+Initialize Node.js project with Express.js; set up project structure (routes/, controllers/, services/, models/)
+Node.js, Express.js
+Critical
+Omkar P
+T-2.2
+Install and configure Socket.io for bi-directional real-time communication with dashboard and PWA driver clients
+Socket.io 4.x
+Critical
+Omkar P
+T-2.3
+Set up Redis server (Docker image: redis:7-alpine) and configure Bull queue for async job processing
+Redis, Bull
+High
+Sarthak N
+T-2.4
+Create detection ingestion endpoint: POST /api/detection — validates detection JSON, pushes event to Redis Pub/Sub channel "detections"
+Express, Redis
+Critical
+Omkar P
+T-2.5
+Implement Redis subscriber in Node.js that listens on "detections" channel and triggers signal control logic
+Redis Pub/Sub
+Critical
+Omkar P
+T-2.6
+Connect MongoDB Atlas (free tier) for persistent incident logging; define Mongoose schema for detection events
+MongoDB, Mongoose
+High
+Sarthak M
+3.2.2 Signal Control & Route Pre-Clearing
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-2.7
+Define city intersection graph: nodes = intersections, edges = roads with distance weights (JSON config file for 4 demo intersections)
+JSON, Node.js
+Critical
+Sarthak M
+T-2.8
+Implement A* pathfinding algorithm to compute optimal ambulance route from current detected position to known hospital destination
+Custom A* in JS
+High
+Sarthak M
+T-2.9
+Build IntersectionManager service: maintains signal state for each intersection (RED/GREEN/YELLOW), implements priority queue ordered by ambulance ETA
+Node.js, Priority Queue
+Critical
+Omkar P
+T-2.10
+Implement signal switching logic: for each intersection on predicted route, compute ETA = distance/speed; switch signal GREEN at (ETA - 20 seconds)
+Node.js, Math
+Critical
+Omkar P
+T-2.11
+Implement cooldown timer: after ambulance passes an intersection (zone-exit event received), auto-revert signal to RED after 15-second buffer
+Node.js setInterval
+High
+Omkar P
+T-2.12
+Implement GPS beacon endpoint: POST /api/beacon — receives ambulance GPS coordinates every 2 seconds; updates route if ambulance deviates from predicted path
+Express
+High
+Sarthak N
+T-2.13
+Build fallback mode: if camera detection feed drops (no event for 10 seconds), switch to GPS-only beacon mode automatically with status alert on dashboard
+Node.js event emitter
+Medium
+Sarthak N
+3.2.3 REST API Endpoints
+Endpoint
+Method
+Description
+Response
+POST /api/detection
+POST
+Receive AI detection event from Python engine
+{ success, corridorId }
+POST /api/beacon
+POST
+Receive ambulance GPS beacon update
+{ route, eta_map }
+GET /api/signals
+GET
+Get current state of all intersection signals
+{ intersections[] }
+GET /api/incidents
+GET
+List all logged incidents with filters
+{ incidents[], total }
+GET /api/analytics
+GET
+Aggregate impact metrics (avg time saved, corridors cleared)
+{ metrics }
+WS /socket.io
+WebSocket
+Real-time event stream for dashboard and PWA clients
+Event-based
+Phase 3: Driver Alert Progressive Web App  [Hours 6–10]
+Objective: Build a React-based Progressive Web App (PWA) that works on any smartphone browser, receives real-time emergency alerts via Web Push and Socket.io, displays the ambulance location on a live map, and provides audio/visual guidance for safe lane clearing — no app store or installation required.
+3.3.1 PWA Setup & Architecture
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-3.1
+Scaffold Next.js PWA project using Bun: bunx create-next-app@latest driver-pwa; configure next.config.js with next-pwa plugin, manifest.json, icons, display: standalone
+Next.js 14, next-pwa, Bun
+Critical
+Lavya G
+T-3.2
+Install PWA dependencies using Bun: bun add socket.io-client @googlemaps/js-api-loader workbox-window next-pwa
+Bun
+Critical
+Lavya G
+T-3.3
+Configure Service Worker via next-pwa (wraps Workbox): precache static assets in next.config.js, register Web Push subscription in _app.tsx, handle background push events in custom sw.js
+next-pwa, Workbox, web-push (backend)
+Critical
+Lavya G
+T-3.4
+Implement app mode selector: Driver Mode and Ambulance Mode — user picks once on first visit, stored in localStorage
+React, localStorage
+High
+Sarthak M
+3.3.2 Driver Mode Features
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-3.5
+Implement geofencing: use browser Geolocation API to continuously track driver position; backend computes if driver is within 500m of active corridor and sends targeted Socket.io event
+Geolocation API, Socket.io
+Critical
+Lavya G
+T-3.6
+Build emergency alert overlay: full-screen red pulsing React component with "AMBULANCE APPROACHING — MOVE LEFT" text, CSS keyframe pulse animation, rendered on top of map
+React, CSS animations
+Critical
+Lavya G
+T-3.7
+Implement Web Speech API TTS: window.speechSynthesis.speak() fires on emergency trigger; reads "Emergency vehicle approaching. Please move to the left lane immediately."
+Web Speech API (SpeechSynthesis)
+High
+Lavya G
+T-3.8
+Embed Google Maps JS API: driver location (blue dot), ambulance location (red pulsing marker), predicted corridor route (highlighted polyline), affected intersections (orange markers)
+@react-google-maps/api
+Critical
+Sarthak M
+T-3.9
+Display ambulance ETA countdown timer overlay on map (e.g., "Ambulance in 45 seconds"), updated in real time from Socket.io events
+React state, Socket.io
+High
+Sarthak M
+T-3.10
+Trigger "Safe to merge" Web Push notification via service worker once ambulance passes the driver geofence zone; backend sends push using web-push (VAPID)
+Web Push API, Workbox, web-push (Node)
+High
+Omkar P
+T-3.11
+Implement Vibration API: navigator.vibrate([200,100,200,100,200]) on alert, navigator.vibrate(600) on safe-to-merge (Android Chrome supported)
+Vibration API
+Medium
+Lavya G
+3.3.3 Ambulance Mode Features (PWA Beacon)
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-3.12
+Show corridor status screen: React page listing upcoming intersections with signal color badge (GREEN/RED) and ETA countdown to each
+React, Socket.io
+High
+Sarthak M
+T-3.13
+Send GPS beacon POST /api/beacon every 2 seconds using setInterval; use Page Visibility API to detect backgrounding and switch to service worker background sync if tab is hidden
+Geolocation API, Background Sync API, Service Worker
+Critical
+Sarthak M
+T-3.14
+Display live count of Web Push alerts sent to nearby drivers via Socket.io event "alert_sent"
+Socket.io, React state
+Medium
+Omkar P
+T-3.15
+Add PWA install prompt: detect beforeinstallprompt event and show custom "Add to Home Screen" CTA banner to encourage installation for persistent beacon use
+beforeinstallprompt API
+Medium
+Lavya G
+Phase 4: Real-Time Traffic Dashboard  [Hours 8–12]
+Objective: Build a React.js web dashboard that provides city-level visibility of all active corridors, intersection states, live camera feeds, and incident analytics.
+3.4.1 Dashboard Setup & Layout
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-4.1
+Bootstrap Next.js dashboard app using Bun: bunx create-next-app@latest traffic-dashboard; install dependencies: bun add socket.io-client mapbox-gl react-map-gl recharts axios tailwindcss
+Next.js 14, Bun, TailwindCSS
+Critical
+Sarthak N
+T-4.2
+Design responsive 3-panel layout: Left sidebar (intersection status list), Center (Mapbox map), Right panel (live camera feed + alerts feed)
+React, TailwindCSS
+Critical
+Sarthak N
+T-4.3
+Connect to Socket.io backend; handle events: signal_update, detection_event, alert_sent, corridor_cleared, fallback_activated
+socket.io-client
+Critical
+Sarthak N
+T-4.4
+Implement dark mode UI with deep navy (#0A2342) background theme for high-visibility control room aesthetic
+TailwindCSS, CSS
+Medium
+Lavya G
+3.4.2 Map & Signal Visualization
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-4.5
+Render Mapbox GL map centered on demo city; add custom layer for road network of 4 demo intersections
+Mapbox GL JS, react-map-gl
+Critical
+Sarthak N
+T-4.6
+Add animated ambulance marker (red siren icon) that updates position in real time from Socket.io events
+Mapbox GL, Lottie
+Critical
+Sarthak N
+T-4.7
+Render predicted route as animated dashed polyline on the map (cyan color, pulsing animation)
+Mapbox GL, GeoJSON
+High
+Sarthak N
+T-4.8
+Add intersection markers that change color dynamically: RED (default), GREEN (corridor active), ORANGE (ETA < 30s), GREY (cooldown/revert)
+Mapbox GL, React state
+Critical
+Lavya G
+T-4.9
+Add 24-hour incident heatmap toggle: density layer showing historical ambulance corridors
+Mapbox Heatmap Layer
+Medium
+Lavya G
+3.4.3 Analytics & Metrics Panel
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-4.10
+Top KPI cards: Total Corridors Cleared Today, Average Response Time Saved (min), Active Alerts Sent, Current Active Corridors
+React, TailwindCSS
+Critical
+Omkar P
+T-4.11
+Line chart: Corridor activations per hour over the last 24 hours (simulated data for demo)
+Recharts, LineChart
+High
+Omkar P
+T-4.12
+Bar chart: Average clearance time per intersection (which intersections are bottlenecks)
+Recharts, BarChart
+High
+Omkar P
+T-4.13
+Live incident log table with columns: Timestamp, Intersection, Confidence, ETA at Detection, Clearance Time, Alerts Sent
+React Table / TailwindCSS
+High
+Omkar P
+T-4.14
+Impact ticker: "Estimated lives impacted: X" calculated as (corridors_cleared * 0.05) with animated counter
+React, countUp.js
+Medium
+Lavya G
+Phase 5: Advanced "Wow Factor" Features  [Hours 10–14]
+Objective: Implement differentiating features that elevate the project above standard hackathon submissions and demonstrate production-readiness.
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-5.1
+Predictive ETA Display: Dashboard shows a countdown (e.g., "Intersection 3 — GREEN in 12s") based on A* route ETA calculation
+React, Socket.io
+High
+Sarthak M
+T-5.2
+Incident Severity Classification: Secondary YOLOv8 classifier detects Code-1 (lights only) vs Code-3 (lights + siren) based on presence of flashing lights pattern. Adjusts alert urgency accordingly.
+YOLOv8 custom classifier
+Medium
+Lavya G
+T-5.3
+Fallback Mode Demo: Kill the camera detection feed live during demo; show dashboard automatically switch to "GPS Beacon Mode" with orange status badge — demonstrates resilience
+Node.js event emitter
+High
+Omkar P
+T-5.4
+Multi-Intersection Simulation: Set up 4 virtual intersections in Node.js with configurable signal states; run a scripted demo loop showing full corridor clearance across all 4 intersections in sequence
+Node.js, Socket.io
+Critical
+Sarthak N
+T-5.5
+Dockerize full stack: docker-compose.yml with services: ai-engine (Python), backend (Node.js), redis, mongodb. Single command startup: docker-compose up
+Docker, Docker Compose
+High
+Sarthak N
+T-5.6
+Analytics Report API: GET /api/report returns PDF-ready JSON with 30-day simulated stats: corridors_cleared, avg_time_saved, alerts_sent, estimated_lives_impacted
+Express, Node.js
+Medium
+Omkar P
+T-5.7
+Geofence Radius Configurator: Dashboard admin panel allows real-time adjustment of alert geofence radius (100m–2000m) which pushes config update to all connected PWA clients
+React slider, Socket.io
+Low
+Lavya G
+Phase 6: Demo Preparation & Presentation  [Hours 14–16+]
+Objective: Prepare a flawless, rehearsed live demonstration that makes judges understand the problem, the solution, and its real-world impact within 5 minutes.
+Task ID
+Task Description
+Technology
+Priority
+Owner
+T-6.1
+Record 60-second backup demo video: full flow from detection to signal switch to PWA alert on phone browser, with screen recording + voiceover commentary
+OBS Studio
+Critical
+Sarthak M
+T-6.2
+Set up demo hardware: laptop running detect.py on looped ambulance video, backend + dashboard on second screen or same machine with split view
+OBS, laptop
+Critical
+All Members
+T-6.3
+Pre-load demo state: 142 past corridors cleared, simulated historical heatmap data, pre-populated incident log visible on dashboard
+MongoDB seed script
+High
+Omkar P
+T-6.4
+Prepare demo script (timed): 30s problem statement, 30s solution overview, 90s live demo walkthrough, 30s impact numbers
+None
+Critical
+All Members
+T-6.5
+Rehearse demo flow 3 times end-to-end; time each run; identify and fix any startup delays or click-heavy transitions
+None
+Critical
+All Members
+T-6.6
+Prepare 3 key impact statistics to quote verbally: (1) Reduces corridor clearance to under 3 seconds, (2) Works on existing infrastructure — zero hardware cost, (3) Geofenced alerts eliminate false alarms for uninvolved drivers
+None
+Critical
+All Members
+T-6.7
+Stress test: run full system for 10 minutes continuously; verify no memory leaks, socket disconnections, or UI freeze
+Node.js, browser dev tools
+High
+Sarthak N
+4. Non-Functional Requirements
+4.1 Performance Requirements
+Metric
+Requirement
+Target Value
+Detection Latency
+Time from ambulance entering camera frame to backend event received
+< 2 seconds
+Signal Switch Latency
+Time from detection event to signal state changed and broadcast
+< 1 second
+Web Push Delivery
+Time from signal switch to Web Push notification received on driver browser
+< 3 seconds
+Dashboard Update
+Time from backend event to dashboard map/KPI update
+< 500 ms
+Video Processing FPS
+Frames per second processed by AI engine (CPU-only mode)
+> 10 FPS
+Model Accuracy
+Ambulance detection precision on validation dataset
+> 85%
+PWA Load Time
+Time-to-interactive from first URL open (cold cache)
+< 3 seconds
+API Response Time
+REST endpoint p95 response time under 50 concurrent users
+< 200 ms
+4.2 Reliability & Availability
+The backend must implement automatic reconnection for Socket.io clients (PWA, dashboard) with exponential backoff.
+Redis must have a fallback: if Redis is unavailable, the system must degrade gracefully to direct in-memory event processing.
+Camera feed watchdog: if no detection events received for 10+ seconds, auto-switch to GPS beacon mode and send status alert.
+All critical services (backend, AI engine) must restart automatically via Docker restart: always policy.
+System uptime target for demo: 99.9% over 36-hour hackathon period.
+4.3 Security Requirements
+All API endpoints must validate input against a defined JSON schema; reject malformed payloads with HTTP 400.
+WebSocket connections must include an API key header for authentication (simple shared secret for hackathon).
+Web Push payloads must not include personally identifiable information about ambulance patients or exact patient locations.
+CORS must be configured to allow only trusted origins (dashboard domain + PWA domain).
+VAPID private key must be stored as an environment variable; never committed to source control.
+4.4 Scalability
+Backend must support at least 500 concurrent WebSocket connections (Socket.io + Redis adapter).
+AI detection engine must support parallel processing of 4 camera feeds simultaneously via Python multiprocessing.
+MongoDB indexes on timestamp and zone fields for fast incident log queries.
+Stateless backend design — horizontal scaling via Docker Swarm or Kubernetes (future).
+4.5 Usability
+PWA onboarding: new users must be able to select their mode (Driver/Ambulance), grant location permission, and enable push notifications within 30 seconds of first visit.
+Dashboard must be readable in daylight conditions (no low-contrast elements); use minimum 4.5:1 WCAG AA contrast ratio.
+All alert notifications must be actionable within 1 tap; no multi-step acknowledgement flows.
+TTS alerts must play even when phone is in silent mode (emergency override).
+5. System Architecture
+5.1 High-Level Architecture
+The system follows an event-driven microservices architecture with four primary layers:
+Layer
+Components
+Communication
+Perception Layer
+AI Detection Engine (Python, YOLOv8), Audio CNN, Camera feeds (RTSP)
+HTTP POST to Backend API
+Intelligence Layer
+Node.js Backend, A* Router, IntersectionManager, Signal Controller
+Redis Pub/Sub, Internal function calls
+Distribution Layer
+Socket.io real-time broker, Web Push API (VAPID), REST API
+WebSocket, HTTP/2, Web Push Protocol
+Presentation Layer
+Next.js Traffic Dashboard (operator), Next.js PWA (drivers), MongoDB Analytics
+WebSocket, REST API, Web Push
+5.2 Data Flow Description
+Camera feed (RTSP or MP4 file) is ingested by the AI Detection Engine (detect.py).
+YOLOv8 detects ambulance; ByteTrack assigns track ID and computes direction vector.
+Detection event JSON is posted to POST /api/detection on the Node.js backend.
+Backend publishes event to Redis Pub/Sub channel "detections".
+Redis subscriber triggers A* pathfinding to compute route to hospital.
+IntersectionManager schedules signal switches along route with ETA-based timing.
+Signal state changes are emitted via Socket.io to all connected dashboard and app clients.
+Web Push notification sent to subscribed PWA service workers of all drivers within 500m geofence via VAPID web-push library.
+PWA displays alert overlay, plays TTS via Web Speech API, triggers vibration pattern, and updates live map.
+React dashboard updates signal colors, ambulance marker position, and incident log in real time.
+After ambulance passes, cooldown timer triggers signal revert and "Safe to merge" Web Push to drivers.
+Full incident is persisted to MongoDB with all metrics for analytics.
+5.3 Technology Stack Summary
+Category
+Technology
+Version
+Purpose
+AI Vision
+YOLOv8 / YOLOv10
+Latest
+Real-time ambulance object detection
+Object Tracking
+ByteTrack
+Latest
+Persistent multi-object tracking across frames
+Model Inference
+ONNX Runtime
+1.16+
+Optimized CPU inference of exported models
+Computer Vision
+OpenCV
+4.8+
+Frame processing, zone polygon detection
+Audio AI
+librosa + PyTorch
+0.10 + 2.1
+Mel spectrogram extraction and CNN siren classifier
+AI Runtime
+Python
+3.10+
+AI engine scripting language
+Backend Runtime
+Node.js
+20 LTS
+Scalable async backend server
+Web Framework
+Express.js
+4.x
+REST API routing and middleware
+Real-Time Transport
+Socket.io
+4.x
+WebSocket-based real-time event broker
+Message Broker
+Redis (Pub/Sub)
+7.x
+Decoupled inter-service event messaging
+Job Queue
+Bull
+4.x
+Background job processing for signal timers
+Database
+MongoDB Atlas
+7.x
+Incident and analytics persistent storage
+ODM
+Mongoose
+8.x
+MongoDB schema and query abstraction
+Package Manager
+Bun
+1.x
+Ultra-fast package install + script runner for all JS projects
+PWA Framework
+Next.js + next-pwa
+14.x + 5.x
+SSR-capable PWA framework for driver alert app; service worker via next-pwa (Workbox)
+Service Worker
+Workbox
+7.x
+Offline caching, background sync, push event handling
+Push Notifications
+Web Push API + web-push (Node)
+W3C standard
+Browser-native push delivery via VAPID — no Firebase needed
+Maps (PWA)
+Google Maps JS API / @react-google-maps
+Latest
+Driver and ambulance live map in PWA
+TTS
+Web Speech API (SpeechSynthesis)
+W3C standard
+Browser-native text-to-speech alert readout
+Vibration
+Vibration API (navigator.vibrate)
+W3C standard
+Haptic alert patterns on Android Chrome
+Frontend Framework
+Next.js
+14.x
+Traffic control dashboard + PWA — App Router, SSR, API routes
+Dashboard Map
+Mapbox GL JS
+3.x
+High-performance WebGL map rendering
+Charts
+Recharts
+2.x
+Analytics charts and graphs
+CSS Framework
+TailwindCSS
+3.x
+Dashboard and component styling
+Pathfinding
+Custom A* (JS)
+N/A
+Route prediction and signal pre-clearing
+Containerization
+Docker + Compose
+24+
+One-command deployment and demo setup
+Routing API
+Google Maps API
+Latest
+Real-world distance and ETA calculations
+6. Data Requirements
+6.1 MongoDB Data Schemas
+6.1.1 Detection Incident Schema
+Field
+Type
+Description
+_id
+ObjectId
+Auto-generated MongoDB document ID
+trackId
+String
+ByteTrack-assigned persistent ambulance track ID
+detectedAt
+Date
+Timestamp of first detection in this incident
+zone
+String
+Intersection/camera zone where ambulance was detected
+confidence
+Number
+YOLOv8 detection confidence score (0–1)
+direction
+Object
+{ dx, dy } velocity vector indicating travel direction
+route
+Array
+A*-computed route: array of intersection IDs in order
+signalSwitches
+Array
+Log of signal switches: [{ intersectionId, switchedAt, revertedAt }]
+alertsSent
+Number
+Count of FCM push notifications sent for this incident
+corridorClearedAt
+Date
+Timestamp when last intersection in route reverted to RED
+timeSavedEstimate
+Number
+Estimated seconds saved vs. no-corridor scenario
+mode
+String
+"vision" or "gps_fallback" — detection mode used
+6.1.2 Signal State (In-Memory)
+Field
+Type
+Description
+intersectionId
+String
+Unique intersection identifier (e.g., "INT_01")
+state
+Enum
+NORMAL_RED | CORRIDOR_GREEN | PRE_CLEAR_ORANGE | COOLDOWN
+activatedAt
+Date
+When corridor was activated for this intersection
+eta
+Number
+Seconds until ambulance is expected to reach this intersection
+revertAfter
+Number
+Unix timestamp after which signal reverts to NORMAL_RED
+6.2 Socket.io Event Contracts
+Event Name
+Direction
+Payload Schema
+detection_event
+Server → Clients
+{ trackId, zone, confidence, timestamp }
+signal_update
+Server → Clients
+{ intersectionId, state, eta, activatedAt }
+route_update
+Server → Clients
+{ route: [intersectionId], ambulanceLat, ambulanceLng }
+alert_sent
+Server → Clients
+{ count, radius, zone }
+corridor_cleared
+Server → Clients
+{ incidentId, timeSaved, alertsSent }
+fallback_activated
+Server → Clients
+{ reason, timestamp }
+beacon_update
+Client → Server
+{ lat, lng, speed, heading, timestamp }
+7. Appendix
+7.1 Master Task List with Priority & Time Estimate
+Task ID
+Description
+Phase
+Priority
+Est. Hours
+Owner
+T-1.1
+Python environment & dependency setup
+1
+Critical
+0.5
+Sarthak N
+T-1.2
+YOLOv8 weights download
+1
+Critical
+0.5
+Sarthak N
+T-1.3
+Ambulance dataset sourcing (Roboflow)
+1
+Critical
+1
+Lavya G
+T-1.4
+Model fine-tuning (30 epochs, Colab)
+1
+High
+2
+Lavya G
+T-1.5
+ONNX export for CPU inference
+1
+High
+0.5
+Sarthak N
+T-1.6
+detect.py core script
+1
+Critical
+2
+Sarthak N
+T-1.7
+Detection testing on video clips
+1
+Critical
+1
+Omkar P
+T-1.8
+Frame-skip FPS optimization
+1
+Medium
+0.5
+Sarthak N
+T-1.9
+ByteTrack integration
+1
+High
+1.5
+Sarthak M
+T-1.10
+Velocity vector computation
+1
+High
+1
+Sarthak M
+T-1.11
+Zone-crossing polygon logic
+1
+High
+1.5
+Sarthak M
+T-1.12
+Detection event JSON output + HTTP POST
+1
+Critical
+1
+Omkar P
+T-1.13
+Siren audio sample collection
+1
+Medium
+1
+Lavya G
+T-1.14
+Mel spectrogram generation
+1
+Medium
+1
+Lavya G
+T-1.15
+CNN siren classifier training
+1
+Medium
+2
+Lavya G
+T-1.16
+Audio + vision fusion integration
+1
+Medium
+1
+Sarthak M
+T-2.1
+Node.js Express project setup
+2
+Critical
+0.5
+Omkar P
+T-2.2
+Socket.io configuration
+2
+Critical
+1
+Omkar P
+T-2.3
+Redis + Bull setup (Docker)
+2
+High
+1
+Sarthak N
+T-2.4
+POST /api/detection endpoint
+2
+Critical
+1
+Omkar P
+T-2.5
+Redis subscriber for detection events
+2
+Critical
+1
+Omkar P
+T-2.6
+MongoDB + Mongoose schema
+2
+High
+1
+Sarthak M
+T-2.7
+City intersection graph JSON config
+2
+Critical
+1
+Sarthak M
+T-2.8
+A* pathfinding algorithm
+2
+High
+2
+Sarthak M
+T-2.9
+IntersectionManager service
+2
+Critical
+2
+Omkar P
+T-2.10
+ETA-based signal switching logic
+2
+Critical
+1.5
+Omkar P
+T-2.11
+Cooldown timer + signal revert
+2
+High
+1
+Omkar P
+T-2.12
+GPS beacon endpoint
+2
+High
+1
+Sarthak N
+T-2.13
+Fallback mode: GPS-only on camera dropout
+2
+Medium
+1
+Sarthak N
+T-3.1
+Next.js PWA scaffold with next-pwa + manifest.json
+3
+Critical
+0.5
+Lavya G
+T-3.2
+PWA dependencies install via Bun
+3
+Critical
+0.5
+Lavya G
+T-3.3
+Service Worker + Workbox config + VAPID Web Push setup
+3
+Critical
+1.5
+Lavya G
+T-3.4
+Driver/Ambulance mode selector (localStorage)
+3
+High
+0.5
+Sarthak M
+T-3.5
+Geofencing logic (500m radius)
+3
+Critical
+1.5
+Lavya G
+T-3.6
+Emergency alert overlay UI
+3
+Critical
+1
+Lavya G
+T-3.7
+Web Speech API TTS integration
+3
+High
+0.5
+Lavya G
+T-3.8
+Google Maps JS API live view with markers
+3
+Critical
+2
+Sarthak M
+T-3.9
+ETA countdown timer widget
+3
+High
+1
+Sarthak M
+T-3.10
+Web Push "safe to merge" notification via VAPID
+3
+High
+1
+Omkar P
+T-3.11
+Vibration API alert pattern
+3
+Medium
+0.5
+Lavya G
+T-3.12
+Corridor status screen (ambulance PWA mode)
+3
+High
+1
+Sarthak M
+T-3.13
+GPS beacon with Page Visibility + Background Sync fallback
+3
+Critical
+1.5
+Sarthak M
+T-3.14
+Real-time alert count display via Socket.io
+3
+Medium
+0.5
+Omkar P
+T-3.15
+PWA install prompt (beforeinstallprompt)
+3
+Medium
+0.5
+Lavya G
+T-4.1
+Next.js dashboard scaffold + Bun dependency install
+4
+Critical
+0.5
+Sarthak N
+T-4.2
+3-panel dashboard layout
+4
+Critical
+1.5
+Sarthak N
+T-4.3
+Socket.io event handlers in React
+4
+Critical
+1
+Sarthak N
+T-4.4
+Dark mode theme (navy)
+4
+Medium
+1
+Lavya G
+T-4.5
+Mapbox GL map + road network layer
+4
+Critical
+2
+Sarthak N
+T-4.6
+Animated ambulance marker
+4
+Critical
+1
+Sarthak N
+T-4.7
+Predicted route polyline animation
+4
+High
+1
+Sarthak N
+T-4.8
+Dynamic intersection signal markers
+4
+Critical
+1.5
+Lavya G
+T-4.9
+Historical 24h heatmap toggle
+4
+Medium
+1
+Lavya G
+T-4.10
+KPI metric cards
+4
+Critical
+1
+Omkar P
+T-4.11
+Hourly corridor line chart (Recharts)
+4
+High
+1
+Omkar P
+T-4.12
+Per-intersection bar chart
+4
+High
+1
+Omkar P
+T-4.13
+Live incident log table
+4
+High
+1.5
+Omkar P
+T-4.14
+Animated "lives impacted" counter
+4
+Medium
+0.5
+Lavya G
+T-5.1
+Predictive ETA dashboard display
+5
+High
+1
+Sarthak M
+T-5.2
+Code-1 vs Code-3 severity classifier
+5
+Medium
+2
+Lavya G
+T-5.3
+Fallback mode live demo setup
+5
+High
+1
+Omkar P
+T-5.4
+Multi-intersection scripted demo loop
+5
+Critical
+2
+Sarthak N
+T-5.5
+Docker Compose full-stack setup
+5
+High
+2
+Sarthak N
+T-5.6
+Analytics report API endpoint
+5
+Medium
+1
+Omkar P
+T-5.7
+Geofence radius admin configurator
+5
+Low
+1
+Lavya G
+T-6.1
+Record 60-second backup demo video
+6
+Critical
+1
+Sarthak M
+T-6.2
+Demo hardware setup & testing
+6
+Critical
+1
+All
+T-6.3
+Pre-load demo state & seed data
+6
+High
+1
+Omkar P
+T-6.4
+Prepare timed demo script
+6
+Critical
+0.5
+All
+T-6.5
+Full end-to-end rehearsal (x3)
+6
+Critical
+1.5
+All
+T-6.6
+Prepare 3 key verbal impact stats
+6
+Critical
+0.5
+All
+T-6.7
+Stress test (10 min continuous run)
+6
+High
+1
+Sarthak N
+7.2 Team Responsibility Matrix
+Member
+Primary Responsibilities
+Secondary
+Lavya Goel
+YOLOv8 dataset + fine-tuning, Audio CNN, Next.js PWA setup (next-pwa, service worker, manifest), Driver Mode UI (alert overlay, TTS, Vibration API), Dashboard dark theme
+Code-1/3 severity classifier, geofence configurator, PWA install prompt
+Sarthak Nawali
+AI engine (detect.py), ONNX export, Redis/Docker setup, Next.js dashboard + Mapbox, multi-intersection demo loop, stress testing
+GPS beacon endpoint, Docker Compose
+Sarthak Mohite
+ByteTrack tracking, zone logic, Next.js PWA ambulance mode (corridor status, GPS beacon with Background Sync), Google Maps JS integration, A* pathfinding, predictive ETA display, backup demo video
+Audio-vision fusion, signal status screen
+Omkar Pawar
+Node.js backend API, Socket.io, IntersectionManager, MongoDB schemas, signal switching timers, Web Push VAPID integration, analytics charts, demo seed data
+Fallback mode, analytics report API, safe-to-merge Web Push
+7.3 Risk Register
+Risk
+Likelihood
+Impact
+Mitigation
+YOLOv8 accuracy < 80% on test videos
+Medium
+High
+Use pre-trained Roboflow model as fallback; lower confidence threshold to 0.5
+Service Worker not registering on iOS Safari
+Medium
+High
+Test PWA on iOS 16.4+ Safari (first version with full SW + Web Push); Chrome Android is primary demo device as fallback
+Web Push permission denied by user
+Medium
+Medium
+Fall back to Socket.io in-app alert which works without push permission; add clear permission prompt UI explaining why it is needed
+Redis connection drops during demo
+Low
+High
+Fallback to in-memory Map in Node.js; Docker restart policy always active
+Mapbox tile loading fails (no network)
+Medium
+Medium
+Pre-cache tiles for demo area; use offline map option as fallback
+A* route computation too slow
+Low
+Medium
+Limit graph to 4 nodes; precompute all possible routes at startup
+Demo hardware crash
+Low
+Critical
+Pre-recorded 60-second video as last resort fallback (T-6.1)
+End of Document
+Software Requirements Specification — AI Green Corridor System
+Team OrionCoders | HackOverflow 4.0 | Version 1.0

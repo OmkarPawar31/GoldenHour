@@ -25,7 +25,6 @@ interface LogEntry extends Detection {
 // ── Config ─────────────────────────────────────────────────────────────
 const INTERSECTIONS = ["INT-1", "INT-2", "INT-3", "INT-4"] as const;
 const GREEN_DURATION_MS = 5_000;
-const POLL_INTERVAL_MS = 1_000;
 
 // ── Dashboard ──────────────────────────────────────────────────────────
 export default function Home() {
@@ -68,7 +67,7 @@ export default function Home() {
     [lastReceivedAt]
   );
 
-  // Poll /api/detection every second
+  // Poll /api/detection every second for new events
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -79,9 +78,9 @@ export default function Home() {
           handleDetection(data.detection);
         }
       } catch {
-        /* ignore */
+        /* network error – ignore */
       }
-    }, POLL_INTERVAL_MS);
+    }, 1_000);
     return () => clearInterval(interval);
   }, [handleDetection]);
 
