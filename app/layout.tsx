@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Orbitron } from "next/font/google";
+import { Orbitron, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
 const orbitron = Orbitron({
@@ -15,7 +15,7 @@ const orbitron = Orbitron({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#020b18",
+  themeColor: "#08090D",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -42,7 +42,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className={`${inter.variable} ${orbitron.variable} antialiased`}>
+      <body className={`${jakarta.variable} ${orbitron.variable} antialiased`}>
         {children}
       </body>
     </html>
