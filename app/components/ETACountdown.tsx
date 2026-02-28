@@ -1,29 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Timer } from "lucide-react";
 
 interface Props {
-  /** Whether a corridor is currently active */
   active: boolean;
 }
 
-/**
- * Predictive ETA countdown for each intersection.
- * When active, shows a countdown "GREEN in Xs" for each intersection
- * based on simulated A* route ETAs.
- */
 const INTERSECTIONS = [
-  { id: "INT-1", etaOffset: 0 },   // Already green
-  { id: "INT-2", etaOffset: 8 },   // 8s away
-  { id: "INT-3", etaOffset: 18 },  // 18s away
-  { id: "INT-4", etaOffset: 28 },  // 28s away
+  { id: "INT-1", etaOffset: 0 },
+  { id: "INT-2", etaOffset: 8 },
+  { id: "INT-3", etaOffset: 18 },
+  { id: "INT-4", etaOffset: 28 },
 ];
 
 export default function ETACountdown({ active }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const [activatedAt, setActivatedAt] = useState(0);
 
-  // Reset timer when corridor activates
   useEffect(() => {
     if (active) {
       const now = Date.now();
@@ -34,7 +28,6 @@ export default function ETACountdown({ active }: Props) {
     }
   }, [active]);
 
-  // Tick every second while active
   useEffect(() => {
     if (!active) return;
     const interval = setInterval(() => {
@@ -50,14 +43,18 @@ export default function ETACountdown({ active }: Props) {
         const isGreen = active && remaining === 0;
         const isPending = active && remaining > 0;
 
-        let statusText = "RED";
-        let statusColor = "#f44336";
+        let statusText = "STANDBY";
+        let statusColor = "var(--text-muted)";
+        let leftBorder = "rgba(255,255,255,0.1)";
+
         if (isGreen) {
           statusText = "GREEN ✓";
-          statusColor = "#00e676";
+          statusColor = "var(--neon-green)";
+          leftBorder = "var(--neon-green)";
         } else if (isPending) {
           statusText = `GREEN in ${remaining}s`;
-          statusColor = "#ffa726";
+          statusColor = "var(--accent)";
+          leftBorder = "var(--accent)";
         }
 
         return (
@@ -68,28 +65,19 @@ export default function ETACountdown({ active }: Props) {
               alignItems: "center",
               justifyContent: "space-between",
               padding: "0.45rem 0.75rem",
-              backgroundColor: "rgba(255,255,255,0.04)",
+              backgroundColor: "rgba(255,255,255,0.03)",
               borderRadius: 8,
-              borderLeft: `3px solid ${statusColor}`,
+              borderLeft: `3px solid ${leftBorder}`,
               transition: "all 0.3s ease",
             }}
           >
-            <span
-              style={{
-                fontSize: "0.8rem",
-                fontWeight: 600,
-                opacity: 0.9,
-              }}
-            >
-              {int.id}
-            </span>
-            <span
-              style={{
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                color: statusColor,
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <Timer size={11} color={statusColor} />
+              <span style={{ fontSize: "0.75rem", fontWeight: 600, opacity: 0.85 }}>
+                {int.id}
+              </span>
+            </div>
+            <span style={{ fontSize: "0.7rem", fontWeight: 700, color: statusColor }}>
               {statusText}
             </span>
           </div>

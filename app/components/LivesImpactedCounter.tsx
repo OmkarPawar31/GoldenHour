@@ -1,33 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Heart } from "lucide-react";
 
 interface Props {
-  /** Total corridors cleared — used to compute lives impacted */
   corridorsCleared: number;
 }
 
-/**
- * Animated "Estimated Lives Impacted" counter.
- * Formula from the SRS: corridors_cleared × 0.05
- * Displays with a smooth count-up animation.
- */
 export default function LivesImpactedCounter({ corridorsCleared }: Props) {
-  const target = Math.round(corridorsCleared * 0.05 * 100) / 100; // e.g. 7.1
+  const target = Math.round(corridorsCleared * 0.05 * 100) / 100;
   const [display, setDisplay] = useState(0);
   const rafRef = useRef<number | null>(null);
-  const startRef = useRef({ value: 0, time: 0 });
 
   useEffect(() => {
-    const duration = 800; // ms for animation
+    const duration = 800;
     const start = display;
     const startTime = performance.now();
-    startRef.current = { value: start, time: startTime };
 
     const animate = (now: number) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setDisplay(start + (target - start) * eased);
       if (progress < 1) {
@@ -36,41 +28,38 @@ export default function LivesImpactedCounter({ corridorsCleared }: Props) {
     };
 
     rafRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target]);
 
   return (
-    <div
-      style={{
-        textAlign: "center",
-        padding: "1rem",
-        backgroundColor: "rgba(255,255,255,0.04)",
-        borderRadius: 12,
-        border: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "0.7rem",
+    <div style={{
+      textAlign: "center",
+      padding: "1rem",
+      backgroundColor: "rgba(255,107,0,0.05)",
+      borderRadius: 12,
+      border: "1px solid rgba(255,107,0,0.18)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", marginBottom: "0.4rem" }}>
+        <Heart size={12} color="var(--accent)" />
+        <span style={{
+          fontSize: "0.62rem",
           textTransform: "uppercase",
-          letterSpacing: "0.1em",
-          opacity: 0.5,
-          marginBottom: "0.35rem",
-        }}
-      >
-        Estimated Lives Impacted
+          letterSpacing: "0.12em",
+          color: "var(--text-muted)",
+          fontFamily: "var(--font-display)",
+        }}>
+          Estimated Lives Impacted
+        </span>
       </div>
-      <div
-        style={{
-          fontSize: "2rem",
-          fontWeight: 800,
-          color: "#00e676",
-          textShadow: "0 0 20px rgba(0,230,118,0.4)",
-        }}
-      >
+      <div style={{
+        fontSize: "2rem",
+        fontWeight: 900,
+        color: "var(--accent)",
+        textShadow: "0 0 24px rgba(255,107,0,0.5)",
+        fontFamily: "var(--font-display)",
+        letterSpacing: "0.02em",
+      }}>
         {display.toFixed(1)}
       </div>
     </div>

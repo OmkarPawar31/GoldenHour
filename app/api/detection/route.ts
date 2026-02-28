@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendGeofencedAlert } from "../../../lib/push";
 
 // ── Types ────────────────────────────────────────────────────────────────
 interface Detection {
@@ -111,6 +112,13 @@ function activateCorridor(detection: Detection) {
   incidents.unshift(incident);
   // Keep last 200 incidents
   if (incidents.length > 200) incidents.length = 200;
+
+  // Emit to socket if available in global context
+  const io = (global as any).io;
+  if (io) {
+    io.emit("detection_event", { detection: incident });
+    io.emit("signal_update", { signals: signalStates });
+  }
 }
 
 // ── POST /api/detection ──────────────────────────────────────────────────
@@ -131,6 +139,18 @@ export async function POST(req: NextRequest) {
 
     // Trigger corridor activation
     activateCorridor(latestDetection);
+
+    // Mock Intersection 1 coordinate (demo city center)
+    const MOCK_INT1_LAT = 19.043;
+    const MOCK_INT1_LNG = 72.875;
+
+    // Send background push notification to all subscribed drivers near INT1
+    sendGeofencedAlert(
+      MOCK_INT1_LAT,
+      MOCK_INT1_LNG,
+      "🚨 AMBULANCE APPROACHING",
+      "Move to the left lane immediately."
+    ).catch((err) => console.error("Web Push Error", err));
 
     return NextResponse.json({ success: true });
   } catch {

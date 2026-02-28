@@ -8,17 +8,16 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Area,
+  AreaChart,
 } from "recharts";
 
-// ── Simulated 24-hour corridor activation data ────────────────────────
-// In production this would come from MongoDB aggregation
 function generateHourlyData() {
   const now = new Date();
   const data = [];
   for (let i = 23; i >= 0; i--) {
     const hour = new Date(now.getTime() - i * 3600_000);
     const label = hour.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    // Simulate realistic traffic: higher during rush hours (8-10, 17-19)
     const h = hour.getHours();
     const base =
       (h >= 8 && h <= 10) || (h >= 17 && h <= 19)
@@ -30,50 +29,59 @@ function generateHourlyData() {
 }
 
 interface Props {
-  /** Extra live activations to add to the current hour */
   liveBump?: number;
 }
 
 export default function CorridorLineChart({ liveBump = 0 }: Props) {
   const data = generateHourlyData();
-  // Bump the most recent hour with live detection count
   if (data.length > 0) {
     data[data.length - 1].activations += liveBump;
   }
 
   return (
-    <div style={{ width: "100%", height: 220 }}>
+    <div style={{ width: "100%", height: 130 }}>
       <ResponsiveContainer>
-        <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+        <AreaChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+          <defs>
+            <linearGradient id="orangeGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#FF6B00" stopOpacity={0.28} />
+              <stop offset="95%" stopColor="#FF6B00" stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
           <XAxis
             dataKey="time"
-            tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 10 }}
-            interval={3}
-            stroke="rgba(255,255,255,0.1)"
+            tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 9 }}
+            interval={5}
+            stroke="rgba(255,255,255,0.06)"
+            tickLine={false}
           />
           <YAxis
-            tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 10 }}
-            stroke="rgba(255,255,255,0.1)"
+            tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 9 }}
+            stroke="rgba(255,255,255,0.06)"
+            tickLine={false}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: "#0d2b4e",
-              border: "1px solid rgba(255,255,255,0.15)",
+              backgroundColor: "#0F1016",
+              border: "1px solid rgba(255,107,0,0.25)",
               borderRadius: 8,
               color: "#fff",
-              fontSize: 12,
+              fontSize: 11,
             }}
+            itemStyle={{ color: "#FF6B00" }}
+            cursor={{ stroke: "rgba(255,107,0,0.3)" }}
           />
-          <Line
+          <Area
             type="monotone"
             dataKey="activations"
-            stroke="#00e676"
+            stroke="#FF6B00"
             strokeWidth={2}
-            dot={{ r: 2, fill: "#00e676" }}
-            activeDot={{ r: 5, fill: "#00e676" }}
+            fill="url(#orangeGrad)"
+            dot={false}
+            activeDot={{ r: 4, fill: "#FF6B00", stroke: "rgba(255,107,0,0.4)", strokeWidth: 4 }}
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );
